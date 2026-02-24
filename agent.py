@@ -20,16 +20,15 @@ llm = init_chat_model(
     model_provider="google-genai"
 )
 
-
-
-
 # to create state => in state we keep some piece of data
 class MessagesState(TypedDict):
     messages: Annotated[list, add_messages]
 
 # to define nodes     
 def chatbot(state:MessagesState):
+    print("Inside Chatbot" , state)
     response = llm.invoke(state.get("messages"))
+    print(f"LLM Response => {response}" )
     return {"messages":[response]}
 
 def agent(state:MessagesState):
@@ -38,7 +37,6 @@ def agent(state:MessagesState):
 
 
 graph_builder = StateGraph(MessagesState)
-
 graph_builder.add_node("chatbot" , chatbot)
 graph_builder.add_node("agent" , agent)
 
@@ -53,6 +51,6 @@ graph  = graph_builder.compile()
 
 
 # this is the initial state
-updated_state = graph.invoke(MessagesState({"messages":[HumanMessage(content="Hi there am your human")]}))
+updated_state = graph.invoke(MessagesState({"messages":[HumanMessage(content="Hi there am Muhammad atif khan your developer")]}))
 
 print( "Updated State ",updated_state)
