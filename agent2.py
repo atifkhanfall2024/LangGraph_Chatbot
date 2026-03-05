@@ -37,7 +37,7 @@ def Chatbot(state:State):
 
 
 def Evaulations(state:State)-> Literal["Again_Gemini" , "EndNode"]:
-    if True:
+    if False:
         return "EndNode"
     
     return "Again_Gemini"
