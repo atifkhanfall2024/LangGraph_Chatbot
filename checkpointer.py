@@ -1,0 +1,63 @@
+from langchain.messages import AnyMessage
+from typing_extensions import TypedDict, Annotated
+import operator
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph , START , END
+from langchain_core.messages import AIMessage , HumanMessage
+from langchain.chat_models import init_chat_model
+from langgraph.checkpoint.mongodb import MongoDBSaver  
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+key = Path(__file__).resolve().parent / ".env"
+if not  key:
+    raise ValueError("key is not present")
+print(key)
+load_dotenv(key)
+
+llm = init_chat_model(
+    model="gemini-3-flash-preview",
+    model_provider="google-genai"
+)
+
+# to create state => in state we keep some piece of data
+class MessagesState(TypedDict):
+    messages: Annotated[list, add_messages]
+
+# to define nodes     
+def chatbot(state:MessagesState):
+    print("Inside Chatbot" , state)
+    response = llm.invoke(state.get("messages"))
+    print(f"LLM Response => {response}" )
+    return {"messages":[response]}
+
+
+
+
+graph_builder = StateGraph(MessagesState)
+graph_builder.add_node("chatbot" , chatbot)
+
+
+# now added edges
+graph_builder.add_edge(START , "chatbot")
+graph_builder.add_edge("chatbot" , END)
+
+
+def Checkpoint_with_Db(checkpointer):
+    return graph_builder.compile(checkpointer=checkpointer)
+
+
+DB_URl='mongodb://muhammadatifkhan:ukjJEVg58zUN3roM@atifnodejs-shard-00-00.zjo3x.mongodb.net:27017,atifnodejs-shard-00-01.zjo3x.mongodb.net:27017,atifnodejs-shard-00-02.zjo3x.mongodb.net:27017/CheckPointer?ssl=true&replicaSet=atlas-10eloi-shard-0&authSource=admin&retryWrites=true&w=majority'
+with MongoDBSaver.from_conn_string(DB_URl) as checkpointer:
+    graph_with_Checkpointer = Checkpoint_with_Db(checkpointer=checkpointer)
+
+    config = {
+        "configurable": {
+            "thread_id": "Atif"
+        }
+        }
+# this is the initial state
+    for chunks in graph_with_Checkpointer.stream(MessagesState({"messages":[HumanMessage(content="who am i ?")]}), config=config , stream_mode='values'):
+
+        chunks["messages"][-1].pretty_print()
