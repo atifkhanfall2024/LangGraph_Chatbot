@@ -25,11 +25,11 @@ llm = init_chat_model(
 class MessagesState(TypedDict):
     messages: Annotated[list, add_messages]
 
-# to define nodes     
+# to define nodes      
 def chatbot(state:MessagesState):
-    print("Inside Chatbot" , state)
+   # print("Inside Chatbot" , state)
     response = llm.invoke(state.get("messages"))
-    print(f"LLM Response => {response}" )
+   # print(f"LLM Response => {response}" )
     return {"messages":[response]}
 
 
@@ -58,6 +58,6 @@ with MongoDBSaver.from_conn_string(DB_URl) as checkpointer:
         }
         }
 # this is the initial state
-    for chunks in graph_with_Checkpointer.stream(MessagesState({"messages":[HumanMessage(content="who am i ?")]}), config=config , stream_mode='values'):
+    for chunks in graph_with_Checkpointer.stream(MessagesState({"messages":[HumanMessage(content="you know my name ?")]}), config=config , stream_mode='values'):
 
         chunks["messages"][-1].pretty_print()
